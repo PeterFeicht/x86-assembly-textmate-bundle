@@ -1,18 +1,18 @@
 # [PackageDev] target_format: plist, ext: tmLanguage
 name: x86 and x86_64 Assembly
 scopeName: source.asm.x86_64
-fileTypes: [asm, nasm, yasm, inc]
+fileTypes: [asm, nasm, yasm, inc, s]
 uuid: 05d6565d-991a-4e88-8e28-63bb21197f32
 
 patterns:
+- include: '#registers'
+- include: '#mnemonics'
 - include: '#constants'
 - include: '#entities'
 - include: '#support'
 - include: '#comments'
 - include: '#preprocessor'
 - include: '#strings'
-- include: '#registers'
-- include: '#mnemonics'
 
 repository:
   constants:
@@ -28,36 +28,36 @@ repository:
     - name: constant.numeric.dec
       match: \b[0-9]+\b
     - name: constant.numeric.hex
-      match: \b([0-9a-fA-F]+h|0x[0-9a-fA-F]+)\b
+      match: \b([0-9a-fA-F]+[hH]|0x[0-9a-fA-F]+)\b
 
   entities:
     patterns:
     - name: entity.name.section
-      match: '(section\s+)?\.((ro)?data|bss|text)'
+      match: '((section|segment)\s+)?\.((ro)?data|bss|text)'
     - name: entity.name.function
-      match: '^\s*(\w|[\._?])(\w|[_$#@~\.?])*\:'
+      match: '^\s*(%%)?(\w|[\._?])(\w|[_$#@~\.?])*\:'
     - name: invalid.entity.name.function
       match: '^\s*([$@~])(\w|[_$#@~\.?])*\:'
     - name: entity.directive
-      match: ^\.?(globa?l)\b
+      match: ^\.?(globa?l|extern)\b
     - name: text.variable
       match: (\$\w+)\b
 
   support:
     patterns:
     - name: support.type.asm
-      match: (?i)\b(byte|([doqty]|dq)?word|(d|res)[bdoqtwy]?|ddq|incbin|equ|times)\b
+      match: (?i)\b(byte|([doqty]|dq)?word|(d|res)[bdoqtwy]?|ddq|incbin|equ|times|(end|i)?struc|at|iend)\b
     - name: support.directive.asm
-      match: (?i)\b(\.?(align|bits|cpu|fpu)|use(16|32|64))\b
+      match: (?i)\b(\.?(alignb?|bits|cpu|fpu)|use(16|32|64))\b
     - name: support.modifier.asm
-      match: \b(strict|nosplit|near|far|abs|rel|seg|wrt)\b
+      match: \b(strict|nosplit|near|far|abs|rel|seg|wrt|absolute|common)\b
     - name: support.prefix.asm
       match: \b([ao](16|32|64))\b
  
   comments:
     patterns:
     - name: comment.line
-      match: (?:^ *|\G *| +)((#|;).*\n?)
+      match: (;|(^|\s)#\s).*$
     - name: comment.block
       begin: /\*
       end: \*/
@@ -100,13 +100,22 @@ repository:
           '0': {name: punctuation.definition.string.end.c}
     
     - name: meta.preprocessor.c
-      begin: ^\s*[%#]\s*(define|defined|elif|else|if|ifdef|ifndef|line|pragma|rep|undef|endif)\b
+      begin: ^\s*[%#]\s*((xi?)?define|defined|elif(def)?|else|if(macro|ctx|idni?|num|str)?|ifn?def|line|(end)?macro|pragma|undef|endif)\b
       end: (?=(?://|/\*))|$
       captures:
         '1': {name: keyword.control.import.c}
       patterns:
       - match: (?>\\\s*\n)
         name: punctuation.separator.continuation.c
+
+    - name: meta.preprocessor.nasm
+      begin: ^\s*[#%]\s*(assign|strlen|substr|(end|exit)?rep|push|pop)\b
+      end: $
+      captures:
+        '1': {name: keyword.control}
+      patterns:
+      - name: punctuation.separator.continuation.c
+        match: (?>\\\s*\n)
 
   strings:
     patterns:
@@ -454,12 +463,16 @@ repository:
 
   mnemonics-supplemental-amd:
     patterns:
+    - name: keyword.mnemonic.supplemental.amd.general-purpose
+      match: \b(bl([cs](fill|ic?|msk)|cs)|t1mskc|tzmsk)\b
     - name: keyword.mnemonic.supplemental.amd.system
-      match: \b(clgi|int3|invlpga|iretw|skinit|stgi|vm(load|mcall|run|save))\b
+      match: \b(clgi|int3|invlpga|iretw|skinit|stgi|vm(load|mcall|run|save)|monitorx|mwaitx)\b
+    - name: keyword.mnemonic.supplemental.amd.profiling
+      match: \b([ls]lwpcb|lwp(ins|val))\b
     - name: keyword.mnemonic.supplemental.amd.memory-management
       match: \b(movnts[ds])\b
     - name: keyword.mnemonic.supplemental.amd.cache-management
-      match: \b(prefetch)\b
+      match: \b(prefetch|clzero)\b
     - name: keyword.mnemonic.supplemental.amd.sse4.a
       match: \b((extr|insert)q)\b
     - name: keyword.mnemonic.supplemental.amd.fma4
